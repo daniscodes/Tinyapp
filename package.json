@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/daniscodes/Tinyapp/issues"
   },
-  "homepage": "https://github.com/daniscodes/Tinyapp#readme"
+  "homepage": "https://github.com/daniscodes/Tinyapp#readme",
+  "dependencies": {
+    "express": "^4.18.1"
+  }
 }
