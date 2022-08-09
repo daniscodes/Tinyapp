@@ -55,7 +55,17 @@ app.post("/urls", (req, res) => {
   console.log(req.body);
   res.send("Ok");
 
-  const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
-  res.redirect(`/urls/${shortURL}`)
+  const id = generateRandomString();
+  urlDatabase[id] = req.body.longURL;
+  res.redirect(`/urls/${id}`)
 })
+
+app.get("/u/:id", (req, res) => {
+  const longURL = urlDatabase[req.params.id]
+  if (longURL){
+  res.redirect(longURL);
+  } else {
+    res.statusCpde = 404;
+    res.send(`<h2>404 Not Found</h2>`)
+  }
+});
