@@ -2,6 +2,15 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 
+function generateRandomString() {
+  const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let str = ''
+
+  for(let i = 0; i < 7; i++){
+    str += characters[Math.floor(Math.random() * characters.length)];
+  }
+}
+
 app.set("view engine", "ejs");
 
 const urlDatabase = {
