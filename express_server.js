@@ -6,9 +6,10 @@ function generateRandomString() {
   const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let str = ''
 
-  for(let i = 0; i < 7; i++){
+  for(let i = 0; i < 6; i++){
     str += characters[Math.floor(Math.random() * characters.length)];
   }
+  return str;
 }
 
 app.set("view engine", "ejs");
@@ -53,4 +54,8 @@ app.get("/urls/:id", (req, res) => {
 app.post("/urls", (req, res) => {
   console.log(req.body);
   res.send("Ok");
+
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = req.body.longURL;
+  res.redirect(`/urls/${shortURL}`)
 })
