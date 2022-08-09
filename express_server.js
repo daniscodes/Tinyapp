@@ -69,3 +69,8 @@ app.get("/u/:id", (req, res) => {
     res.send(`<h2>404 Not Found</h2>`)
   }
 });
+
+app.post("/urls/:id/delete", (req, res) => {
+  delete urlDatabase[req.params.id];
+  res.redirect(`/urls`);
+})
