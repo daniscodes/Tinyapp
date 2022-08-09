@@ -60,7 +60,7 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`)
 })
 
-app.get("/u/:id", (req, res) => {
+app.get("/urls/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id]
   if (longURL){
   res.redirect(longURL);
@@ -69,6 +69,11 @@ app.get("/u/:id", (req, res) => {
     res.send(`<h2>404 Not Found</h2>`)
   }
 });
+
+app.post(`/urls/:id`, (req, res) => {
+  const id = req.params.id;
+  urlDatabase[req.params.id] = req.body.updatedURL;
+})
 
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
