@@ -53,15 +53,33 @@ app.post('/logout', (req, res) => {
 //   res.send("<html><body>Hello <b>World</b></body></html>\n");
 // });
 
+//user registration
+app.get("/register", (req,res) => {
+  const templateVars = {user: users[req.cookies.user_id]};
+  res.render('register', templateVars);
+});
+
+app.post("/register", (req,res) => {
+  let newUserID = generateRandomString();
+  
+  users[newUserID] = {
+    id: newUserID,
+    email: req.body.email,
+    password: req.body.password
+  };
+    res.cookie('user_id', newUserID)
+    res.redirect('urls'); 
+  })
+
 //create new shortened url web form
 app.get("/urls/new", (req, res) => {
-  const templateVars = { username: req.cookies["username"] };
+  const templateVars = { user: users[req.cookies.user_id] };
   res.render('urls_new', templateVars);
 });
 
 // list of stored urls
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase,  username: req.cookies["username"] };
+  const templateVars = { urls: urlDatabase,  user: users[req.cookies.user_id] };
   res.render("urls_index", templateVars);
 });
 
@@ -92,7 +110,7 @@ app.get("/urls/:id", (req, res) => {
     return res.send(`Provided Tiny URL[${req.params.id}] not found in database`);
   }
 
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], username: req.cookies["username"]  };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: users[req.cookies.user_id]  };
   res.render("urls_show", templateVars)
 })
 
