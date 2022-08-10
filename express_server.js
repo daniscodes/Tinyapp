@@ -49,13 +49,12 @@ app.post('/logout', (req, res) => {
 });
 
 //hello
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
+// app.get("/hello", (req, res) => {
+//   res.send("<html><body>Hello <b>World</b></body></html>\n");
+// });
 
 //create new shortened url web form
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
   const templateVars = { username: req.cookies["username"] };
   res.render('urls_new', templateVars);
 });
