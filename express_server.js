@@ -19,9 +19,31 @@ function generateRandomString() {
   return str;
 }
 
+const isUserInDatabase = function(userEmail) {
+  for (const key in users) {
+    if (users[key].email === userEmail) {
+      return true;
+    }
+  }
+  return false;
+};
+
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
+};
+
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur",
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
 };
 
 app.use(express.urlencoded({ extended: true }));
@@ -60,6 +82,22 @@ app.get("/register", (req,res) => {
 });
 
 app.post("/register", (req,res) => {
+
+  //email/password is empty
+  if (req.body.email === '' || req.body.password === ''){
+    res.statusCode = 400;
+    res.statusMessage = 'Bad Request';
+    return res.send('Email or password is empty!')
+  }
+
+  // user already exists
+  if (isUserInDatabase(req.body.email)) {
+    res.statusCode = 400;
+    res.statusMessage = 'Bad Request';
+    return res.send(`User already exists`);
+  }
+
+
   let newUserID = generateRandomString();
   
   users[newUserID] = {
@@ -67,6 +105,7 @@ app.post("/register", (req,res) => {
     email: req.body.email,
     password: req.body.password
   };
+  console.log(users);
     res.cookie('user_id', newUserID)
     res.redirect('urls'); 
   })
