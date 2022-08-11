@@ -14,21 +14,21 @@
 
     <% if (!user) { %>
       <div class="d-flex flex-row">
-      <form class='form-inline p-2' action="/login" method="POST">
-        <div class="navbar-nav">
-        <a class='nav-item nav-link' href="/register">Register</a>
-        <a class='nav-item nav-link' href="/login">Login</a>
-      </div>
-    </form>
-    <% } else { %>
-      <div class="d-flex flex-row">
-      <form class='form-inline p-2' action="/logout" method="POST">
-        <div>
-          Logged in as: <%= user %>
-          <button type="submit" class="btn btn-primary">Logout</button>
-        </div>
-      </form>
-      <% } %>
-    </div>
+        <form class='form-inline p-2' action="/login" method="POST">
+          <div class="navbar-nav">
+            <a class='nav-item nav-link' href="/register">Register</a>
+            <a class='nav-item nav-link' href="/login">Login</a>
+          </div>
+        </form>
+        <% } else { %>
+          <div class="d-flex flex-row">
+            <form class='form-inline p-2' action="/logout" method="POST">
+              <div>
+                Logged in as: <%= user %>
+                  <button type="submit" class="btn btn-primary">Logout</button>
+              </div>
+            </form>
+            <% } %>
+          </div>
   </nav>
 </header>

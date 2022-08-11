@@ -6,20 +6,20 @@ const app = express();
 const PORT = 8080;
 
 app.set("view engine", "ejs");
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser())
 
 function generateRandomString() {
-  const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let str = ''
 
-  for(let i = 0; i < 6; i++){
+  for (let i = 0; i < 6; i++) {
     str += characters[Math.floor(Math.random() * characters.length)];
   }
   return str;
 }
 
-const isUserInDatabase = function(userEmail) {
+const isUserInDatabase = function (userEmail) {
   for (const key in users) {
     if (users[key].email === userEmail) {
       return true;
@@ -78,14 +78,14 @@ app.post('/login', (req, res) => {
     return res.send(`User Does Not Exist in Database`);
   }
 
-    // check if the password matches with the one stored in the datbase
+  // check if the password matches with the one stored in the datbase
   if (userData.password !== req.body.password) {
     res.statusCode = 403;
     res.statusMessage = 'Forbidden';
     return res.send(`Incorrect Password`);
   }
 
-    //set the appropriate cookie
+  //set the appropriate cookie
   res.cookie('user_id', userData.id);
   res.redirect('/urls');
 });
@@ -102,7 +102,7 @@ app.post('/logout', (req, res) => {
 // });
 
 //user registration
-app.get('/register', (req,res) => {
+app.get('/register', (req, res) => {
   if (req.cookies.user_id) {
     res.redirect('/urls');
     return;
@@ -112,10 +112,10 @@ app.get('/register', (req,res) => {
   res.render('register', templateVars);
 });
 
-app.post("/register", (req,res) => {
+app.post("/register", (req, res) => {
 
   //email/password is empty
-  if (req.body.email === '' || req.body.password === ''){
+  if (req.body.email === '' || req.body.password === '') {
     res.statusCode = 400;
     res.statusMessage = 'Bad Request';
     return res.send('Email or password is empty!')
@@ -130,16 +130,16 @@ app.post("/register", (req,res) => {
 
 
   let newUserID = generateRandomString();
-  
+
   users[newUserID] = {
     id: newUserID,
     email: req.body.email,
     password: req.body.password
   };
   console.log(users);
-    res.cookie('user_id', newUserID)
-    res.redirect('urls'); 
-  })
+  res.cookie('user_id', newUserID)
+  res.redirect('urls');
+})
 
 //create new shortened url web form
 app.get("/urls/new", (req, res) => {
@@ -149,7 +149,7 @@ app.get("/urls/new", (req, res) => {
 
 // list of stored urls
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase,  user: users[req.cookies.user_id] };
+  const templateVars = { urls: urlDatabase, user: users[req.cookies.user_id] };
   res.render("urls_index", templateVars);
 });
 
@@ -180,7 +180,7 @@ app.get("/urls/:id", (req, res) => {
     return res.send(`Provided Tiny URL[${req.params.id}] not found in database`);
   }
 
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: users[req.cookies.user_id]  };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: users[req.cookies.user_id] };
   res.render("urls_show", templateVars)
 })
 
