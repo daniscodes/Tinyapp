@@ -103,13 +103,13 @@ app.post('/logout', (req, res) => {
 
 //user registration
 app.get('/register', (req,res) => {
-  if (req.session.user_id) {
+  if (req.cookies.user_id) {
     res.redirect('/urls');
     return;
   }
-  const user = users[req.session.user_id];
+  const user = users[req.cookies.user_id];
   const templateVars = { user };
-  res.render('urls_register', templateVars);
+  res.render('register', templateVars);
 });
 
 app.post("/register", (req,res) => {
