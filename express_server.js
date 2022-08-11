@@ -58,6 +58,12 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+// user login page
+app.get ('/login', (req,res) => {
+  const templateVars = { urls: urlDatabase, user: users[req.cookies.user_id] };
+  res.render('login', templateVars);
+})
+
 // login existing user
 app.post('/login', (req, res) => {
   res.cookie('username', req.body.username);
