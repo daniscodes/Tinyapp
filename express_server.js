@@ -59,20 +59,40 @@ app.get("/urls.json", (req, res) => {
 });
 
 // user login page
-app.get ('/login', (req,res) => {
+app.get("/login", (req, res) => {
+  // !!! subject to change
+  if (users[req.cookies.user_id]) {
+    res.redirect('/urls');
+    return;
+  }
   const templateVars = { urls: urlDatabase, user: users[req.cookies.user_id] };
-  res.render('login', templateVars);
-})
+  res.render("login", templateVars);
+});
 
 // login existing user
 app.post('/login', (req, res) => {
-  res.cookie('username', req.body.username);
+  let userData = isUserEmailInDatabase(req.body.email);
+  if (userData === false) {
+    res.statusCode = 403;
+    res.statusMessage = 'Forbidden';
+    return res.send(`User Does Not Exist in Database`);
+  }
+
+    // check if the password matches with the one stored in the datbase
+  if (userData.password !== req.body.password) {
+    res.statusCode = 403;
+    res.statusMessage = 'Forbidden';
+    return res.send(`Incorrect Password`);
+  }
+
+    //set the appropriate cookie
+  res.cookie('user_id', userData.id);
   res.redirect('/urls');
 });
 
 // logout user
 app.post('/logout', (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   res.redirect('/urls');
 });
 
@@ -82,9 +102,14 @@ app.post('/logout', (req, res) => {
 // });
 
 //user registration
-app.get("/register", (req,res) => {
-  const templateVars = {user: users[req.cookies.user_id]};
-  res.render('register', templateVars);
+app.get('/register', (req,res) => {
+  if (req.session.user_id) {
+    res.redirect('/urls');
+    return;
+  }
+  const user = users[req.session.user_id];
+  const templateVars = { user };
+  res.render('urls_register', templateVars);
 });
 
 app.post("/register", (req,res) => {
