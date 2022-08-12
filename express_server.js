@@ -60,7 +60,6 @@ app.get("/urls.json", (req, res) => {
 
 // user login page
 app.get("/login", (req, res) => {
-  // !!! subject to change
   if (users[req.cookies.user_id]) {
     res.redirect('/urls');
     return;
@@ -128,7 +127,7 @@ app.post("/register", (req, res) => {
     return res.send(`User already exists`);
   }
 
-
+    //set up a new user
   let newUserID = generateRandomString();
 
   users[newUserID] = {
@@ -138,11 +137,15 @@ app.post("/register", (req, res) => {
   };
   console.log(users);
   res.cookie('user_id', newUserID)
-  res.redirect('urls');
+  res.redirect('/urls');
 })
 
 //create new shortened url web form
 app.get("/urls/new", (req, res) => {
+  if (!users[req.cookies.user_id]) {
+    res.redirect('/login');
+    return;
+  }
   const templateVars = { user: users[req.cookies.user_id] };
   res.render('urls_new', templateVars);
 });
@@ -155,7 +158,12 @@ app.get("/urls", (req, res) => {
 
 // add new url to database
 app.post("/urls", (req, res) => {
-  const id = generateRandomString();
+if (!users[req.cookies.user_id]) {
+  res.redirect('/login');
+  return;
+}
+
+  let id = generateRandomString();
   urlDatabase[id] = req.body.longURL;
   res.redirect(`/urls/${id}`)
 })
