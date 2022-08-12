@@ -92,7 +92,7 @@ app.post('/logout', (req, res) => {
 // user login page
 app.get("/login", (req, res) => {
   const user = users[req.session.user_id];
-  if (!req.session.user_id) {
+  if (req.session.user_id) {
     res.redirect('/urls');
     return;
   }
@@ -106,7 +106,7 @@ app.post('/login', (req, res) => {
     return res.status(400).send(`Cannot leave email and password empty`);
   }
 
-  const userData = isUserEmailInDatabase(req.body.email, req.body.password);
+  const userData = isUserEmailInDatabase(req.body.email, users);
   if (!userData) {
     return res.status(400).send(`User does not exist in database. Please <a href="/register">Register</a>`);
   }
@@ -121,7 +121,7 @@ app.post('/login', (req, res) => {
 });
 // user registration page
 app.get('/register', (req, res) => {
-  if (!req.session.user_id) {
+  if (req.session.user_id) {
     res.redirect('/urls');
     return;
   }
