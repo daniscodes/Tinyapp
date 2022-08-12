@@ -29,8 +29,14 @@ const isUserInDatabase = function (userEmail) {
 };
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
 };
 
 const users = {
@@ -50,7 +56,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // root route
 app.get("/", (req, res) => {
-  res.send("Hello!");
+if (users[req.cookies.user_id]){
+  res.redirect('/urls');
+  return;
+}
+res.redirect('/login');
 });
 
 // available urls in database
@@ -64,7 +74,7 @@ app.get("/login", (req, res) => {
     res.redirect('/urls');
     return;
   }
-  const templateVars = { urls: urlDatabase, user: users[req.cookies.user_id] };
+  const templateVars = { user: users[req.cookies.user_id] };
   res.render("login", templateVars);
 });
 
@@ -152,6 +162,10 @@ app.get("/urls/new", (req, res) => {
 
 // list of stored urls
 app.get("/urls", (req, res) => {
+  if (!users[req.cookies.user_id]) {
+    res.redirect('/login');
+    return;
+  }
   const templateVars = { urls: urlDatabase, user: users[req.cookies.user_id] };
   res.render("urls_index", templateVars);
 });
@@ -164,19 +178,40 @@ if (!users[req.cookies.user_id]) {
 }
 
   let id = generateRandomString();
-  urlDatabase[id] = req.body.longURL;
+  urlDatabase[id] = {
+    longURL: req.body.longURL,
+    userID: req.cookies.user_id
+  }
   res.redirect(`/urls/${id}`)
 })
 
 //delete URL
 app.post("/urls/:id/delete", (req, res) => {
+  if (!users[req.cookies.user_id]) {
+    res.redirect('/login');
+    return;
+  }
+
+  if (urlDatabase[req.params.id].userID !== req.cookies.user_id) {
+    res.redirect('/login');
+    return;
+  }
+
   delete urlDatabase[req.params.id];
   res.redirect(`/urls`);
 });
 
 // edit URL
 app.post(`/urls/:id`, (req, res) => {
-  urlDatabase[req.params.id] = req.body.updatedURL;
+  if (!users[req.cookies.user_id]) {
+    res.redirect('/login');
+    return;
+  }
+  if (urlDatabase[req.params.id].userID !== req.cookies.user_id) {
+    res.redirect('/login');
+    return;
+  }
+  urlDatabase[req.params.id].longURL = req.body.longURL
   res.redirect(`/urls/${req.params.id}`);
 });
 
@@ -188,7 +223,10 @@ app.get("/urls/:id", (req, res) => {
     return res.send(`Provided Tiny URL[${req.params.id}] not found in database`);
   }
 
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: users[req.cookies.user_id] };
+  const templateVars = 
+  { id: req.params.id, 
+    longURL: urlDatabase[req.params.id].longURL, 
+    user: users[req.cookies.user_id] };
   res.render("urls_show", templateVars)
 })
 
@@ -199,7 +237,7 @@ app.get("/u/:id", (req, res) => {
     res.statusMessage = 'Not Found';
     return res.send(`Provided Tiny URL [${req.params.id}] not found in database`);
   }
-  const longURL = urlDatabase[req.params.id];
+  const longURL = urlDatabase[req.params.id].longURL;
   res.redirect(longURL);
 });
 
