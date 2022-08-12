@@ -2,7 +2,7 @@ const express = require('express');
 const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
-const {urlsForUser, isUserEmailInDatabase, generateRandomString} = require('./helpers');
+//const {urlsForUser, isUserEmailInDatabase, generateRandomString} = require('./helpers');
 const app = express();
 const PORT = 8080;
 
@@ -41,6 +41,33 @@ const users = {
 };
 
 //helper functions
+const urlsForUser = function(id, urlDatabase) {
+  const userURL = {};
+  for (const key in urlDatabase) {
+    if (urlDatabase[key].userID === id) {
+      userURL[key] = urlDatabase[key];
+    }
+  }
+  return userURL;
+};
+
+const isUserEmailInDatabase = function(email, database) {
+  const values = Object.values(database);
+  for (const user of values) {
+    if (user.email === email) {
+      return user;
+    }
+  }
+};
+
+const generateRandomString = function() {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+};
 
 // root page
 app.get('/', (req, res) => {
@@ -65,7 +92,7 @@ app.post('/logout', (req, res) => {
 // user login page
 app.get("/login", (req, res) => {
   const user = users[req.session.user_id];
-  if (req.session.user_id) {
+  if (!req.session.user_id) {
     res.redirect('/urls');
     return;
   }
@@ -90,30 +117,30 @@ app.post('/login', (req, res) => {
     }
     req.session.user_id = userData.id;
     res.redirect('/urls');
-  });;
+  });
 });
 // user registration page
-app.get('/register', (req,res) => {
-  if (req.session.user_id) {
+app.get('/register', (req, res) => {
+  if (!req.session.user_id) {
     res.redirect('/urls');
     return;
   }
-  const templateVars = {user: users[req.session.user_id]};
+  const templateVars = { user: users[req.session.user_id] };
   res.render('register', templateVars);
 });
 
 // user registration routing
-app.post('/register', (req,res)=>{
+app.post('/register', (req, res) => {
   // if bad input 
   if (!req.body.email || !req.body.password) {
     return res.status(400).send(`Cannot leave email and password empty. Please <a href="/register">Register</a>`);
   }
-  
+
   // user already exists in datbase
   if (isUserEmailInDatabase(req.body.email, users) !== undefined) {
     return res.status(400).send(`User already exists. Please <a href="/login">Login</a>`);
   }
-  
+
   // setup new user
   let newUserRandomID = generateRandomString();
   users[newUserRandomID] = {
@@ -126,13 +153,13 @@ app.post('/register', (req,res)=>{
 });
 
 // create a new shortened url web form
-app.get('/urls/new', (req,res) => {
+app.get('/urls/new', (req, res) => {
   if (!req.session.user_id) {
     res.redirect('/login');
     return;
   }
 
-  const templateVars = {user: users[req.session.user_id]};
+  const templateVars = { user: users[req.session.user_id] };
   res.render('urls_new', templateVars);
 });
 
@@ -168,10 +195,10 @@ app.post('/urls', (req, res) => {
 });
 
 // delete the url
-app.post('/urls/:id/delete', (req, res)=> {
+app.post('/urls/:id/delete', (req, res) => {
   if (!req.session.user_id) {
     return res.status(400).send('Unable to delete TinyURL');
-  } 
+  }
 
   if (urlDatabase[req.params.id].userID !== req.session.user_id) {
     return res.status(403).send('Unable to delete modify another users Tiny URLs');

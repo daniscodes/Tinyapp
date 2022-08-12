@@ -1,4 +1,4 @@
-const urlsForUser = function (id, urlDatabase) {
+const urlsForUser = function(id, urlDatabase) {
   const userURL = {};
   for (const key in urlDatabase) {
     if (urlDatabase[key].userID === id) {
@@ -17,7 +17,7 @@ const isUserEmailInDatabase = function(email, database) {
   }
 };
 
-const generateRandomString = function () {
+const generateRandomString = function() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   for (let i = 0; i < 6; i++) {
