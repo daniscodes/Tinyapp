@@ -10,16 +10,11 @@ const urlsForUser = function (id, urlDatabase) {
 
 const isUserEmailInDatabase = function(email, database) {
   const values = Object.values(database);
-  const obj = undefined;
-if (obj) {
   for (const user of values) {
     if (user.email === email) {
       return user;
     }
   }
-} else {
- return
-}
 };
 
 const generateRandomString = function () {
