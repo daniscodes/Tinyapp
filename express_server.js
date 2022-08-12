@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
+const {urlsForUser, isUserEmailInDatabase, generateRandomString} = require('./helpers');
 const app = express();
 const PORT = 8080;
 
@@ -10,8 +11,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieSession({
   name: 'session',
   keys: ['LHL', 'Tiny', 'App'],
-  // Cookie Options
-  maxAge: 24 * 60 * 60 * 1000 // 24 hours
 }));
 
 const urlDatabase = {
@@ -42,33 +41,6 @@ const users = {
 };
 
 //helper functions
-const urlsForUser = function (id) {
-  const userURL = {};
-  for (const key in urlDatabase) {
-    if (urlDatabase[key].userID === id) {
-      userURL[key] = urlDatabase[key];
-    }
-  }
-  return userURL;
-};
-
-const isUserEmailInDatabase = function (userEmail) {
-  for (const key in users) {
-    if (users[key].email === userEmail) {
-      return users[key];
-    }
-  }
-  return false;
-};
-
-const generateRandomString = function () {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < 6; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
-};
 
 // root page
 app.get('/', (req, res) => {
@@ -107,8 +79,8 @@ app.post('/login', (req, res) => {
     return res.status(400).send(`Cannot leave email and password empty`);
   }
 
-  const userData = isUserEmailInDatabase(req.body.email);
-  if (userData === false) {
+  const userData = isUserEmailInDatabase(req.body.email, req.body.password);
+  if (!userData) {
     return res.status(400).send(`User does not exist in database. Please <a href="/register">Register</a>`);
   }
   // check if the password matches with the one stored in the datbase
@@ -138,7 +110,7 @@ app.post('/register', (req,res)=>{
   }
   
   // user already exists in datbase
-  if (isUserEmailInDatabase(req.body.email) !== false) {
+  if (isUserEmailInDatabase(req.body.email, users) !== undefined) {
     return res.status(400).send(`User already exists. Please <a href="/login">Login</a>`);
   }
   
@@ -149,7 +121,7 @@ app.post('/register', (req,res)=>{
     email: req.body.email,
     password: bcrypt.hashSync(req.body.password, 10)
   };
-  res.cookie('user_id', newUserRandomID);
+  req.session.user_id = newUserRandomID;
   res.redirect('/urls');
 });
 
@@ -167,12 +139,12 @@ app.get('/urls/new', (req,res) => {
 // show the list of urls that is stored
 app.get("/urls", (req, res) => {
   if (!req.session.user_id) {
-    res.status(401).send('Please login or register');
+    res.status(401).send('Please <a href="/login">Login</a> or <a href="/register">Register</a>');
     return;
   }
 
   const user = users[req.session.user_id];
-  const urls = urlsForUser(req.session.user_id);
+  const urls = urlsForUser(req.session.user_id, urlDatabase);
   const templateVars = { urls, user };
   res.render("urls_index", templateVars);
 });
@@ -180,7 +152,7 @@ app.get("/urls", (req, res) => {
 // add new url to the database
 app.post('/urls', (req, res) => {
   if (!req.session.user_id) {
-    return res.status(403).send('Unable to create TinyURl. Please login');
+    return res.status(403).send('Unable to create TinyURl. Please <a href="/login">Login</a>');
   }
 
   if (!req.body.longURL) {
@@ -210,7 +182,7 @@ app.post('/urls/:id/delete', (req, res)=> {
 });
 
 // edit the url
-app.post('/urls/:id', (req, res) => {
+app.put('/urls/:id', (req, res) => {
   if (!req.session.user_id) {
     return res.status(403).send('Unable to edit Tiny URL');
   }
@@ -226,7 +198,7 @@ app.post('/urls/:id', (req, res) => {
 // re-route to display newly created link
 app.get("/urls/:id", (req, res) => {
   if (!req.session.user_id) {
-    return res.status(403).send('Please Login');
+    return res.status(403).send('Please <a href="/login">Login</a>');
   }
   if (!urlDatabase[req.params.id]) {
     return res.status(404).send(`Provided tiny URL [${req.params.id}] not found in database`);
