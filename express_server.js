@@ -19,6 +19,16 @@ function generateRandomString() {
   return str;
 }
 
+const urlsForUser = function(id) {
+  let userURL = {};
+  for (let key in urlDatabase) {
+    if (urlDatabase[key].userID === id) {
+      userURL[key] = urlDatabase[key];
+    }
+  }
+  return userURL;
+};
+
 const isUserInDatabase = function (userEmail) {
   for (const key in users) {
     if (users[key].email === userEmail) {
@@ -80,18 +90,14 @@ app.get("/login", (req, res) => {
 
 // login existing user
 app.post('/login', (req, res) => {
-  let userData = isUserEmailInDatabase(req.body.email);
+  let userData = isUserInDatabase(req.body.email);
   if (userData === false) {
-    res.statusCode = 403;
-    res.statusMessage = 'Forbidden';
-    return res.send(`User Does Not Exist in Database`);
+    return res.status(403).send(`User Does Not Exist in Database`);
   }
 
   // check if the password matches with the one stored in the datbase
   if (userData.password !== req.body.password) {
-    res.statusCode = 403;
-    res.statusMessage = 'Forbidden';
-    return res.send(`Incorrect Password`);
+    return res.status(403).send(`Incorrect Password`);
   }
 
   //set the appropriate cookie
