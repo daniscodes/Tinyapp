@@ -19,7 +19,7 @@ function generateRandomString() {
   return str;
 }
 
-const urlsForUser = function(id) {
+const urlsForUser = function (id) {
   let userURL = {};
   for (let key in urlDatabase) {
     if (urlDatabase[key].userID === id) {
@@ -66,11 +66,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // root route
 app.get("/", (req, res) => {
-if (users[req.cookies.user_id]){
-  res.redirect('/urls');
-  return;
-}
-res.redirect('/login');
+  if (users[req.cookies.user_id]) {
+    res.redirect('/urls');
+    return;
+  }
+  res.redirect('/login');
 });
 
 // available urls in database
@@ -90,14 +90,20 @@ app.get("/login", (req, res) => {
 
 // login existing user
 app.post('/login', (req, res) => {
+
+  // check if the user doesn't exist in the datbase
+  if (!req.body.email || !req.body.password) {
+    return res.status(400).send(`Cannot leave email and password empty`);
+  }
+
   let userData = isUserInDatabase(req.body.email);
   if (userData === false) {
-    return res.status(403).send(`User Does Not Exist in Database`);
+    return res.status(403).send(`User doesn't exist in database`);
   }
 
   // check if the password matches with the one stored in the datbase
   if (userData.password !== req.body.password) {
-    return res.status(403).send(`Incorrect Password`);
+    return res.status(403).send(`Incorrect password`);
   }
 
   //set the appropriate cookie
@@ -131,19 +137,15 @@ app.post("/register", (req, res) => {
 
   //email/password is empty
   if (req.body.email === '' || req.body.password === '') {
-    res.statusCode = 400;
-    res.statusMessage = 'Bad Request';
-    return res.send('Email or password is empty!')
+    return res.status(400).send('Email or password is empty!')
   }
 
   // user already exists
   if (isUserInDatabase(req.body.email)) {
-    res.statusCode = 400;
-    res.statusMessage = 'Bad Request';
-    return res.send(`User already exists`);
+    return res.status(400).send(`User already exists`);
   }
 
-    //set up a new user
+  //set up a new user
   let newUserID = generateRandomString();
 
   users[newUserID] = {
@@ -169,19 +171,23 @@ app.get("/urls/new", (req, res) => {
 // list of stored urls
 app.get("/urls", (req, res) => {
   if (!users[req.cookies.user_id]) {
-    res.redirect('/login');
+    res.status(401).send("Please login or register")
     return;
   }
-  const templateVars = { urls: urlDatabase, user: users[req.cookies.user_id] };
+
+  let usersURL = urlsForUser(req.cookies.user_id)
+  const templateVars = { urls: usersURL, user: users[req.cookies.user_id] };
   res.render("urls_index", templateVars);
 });
 
 // add new url to database
 app.post("/urls", (req, res) => {
-if (!users[req.cookies.user_id]) {
-  res.redirect('/login');
-  return;
-}
+  if (!users[req.cookies.user_id]) {
+    return res.status(403).send("Please login or register");
+  }
+  if (!req.body.longURL) {
+    return res.status(400).send('Invalid URL');
+  }
 
   let id = generateRandomString();
   urlDatabase[id] = {
@@ -194,13 +200,11 @@ if (!users[req.cookies.user_id]) {
 //delete URL
 app.post("/urls/:id/delete", (req, res) => {
   if (!users[req.cookies.user_id]) {
-    res.redirect('/login');
-    return;
+    return res.status(403).send('Unable to delete Tiny URL');
   }
 
   if (urlDatabase[req.params.id].userID !== req.cookies.user_id) {
-    res.redirect('/login');
-    return;
+    return res.status(403).send('Unable to modify other users\' URLs');
   }
 
   delete urlDatabase[req.params.id];
@@ -210,29 +214,35 @@ app.post("/urls/:id/delete", (req, res) => {
 // edit URL
 app.post(`/urls/:id`, (req, res) => {
   if (!users[req.cookies.user_id]) {
-    res.redirect('/login');
-    return;
+    return res.status(403).send('Unable to edit URL')
   }
   if (urlDatabase[req.params.id].userID !== req.cookies.user_id) {
-    res.redirect('/login');
-    return;
+    return res.status(403).send('Unable to modify other users\' URLs');
   }
   urlDatabase[req.params.id].longURL = req.body.longURL
-  res.redirect(`/urls/${req.params.id}`);
+  res.redirect(`/urls`);
 });
 
 // showing the newly created link
 app.get("/urls/:id", (req, res) => {
-  if (!urlDatabase[req.params.id]) {
-    res.statusCode = 404;
-    res.statusMessage = 'Not Found';
-    return res.send(`Provided Tiny URL[${req.params.id}] not found in database`);
+  if (!users[req.cookies.user_id]) {
+    return res.status(403).send('Please login');
   }
 
-  const templateVars = 
-  { id: req.params.id, 
-    longURL: urlDatabase[req.params.id].longURL, 
-    user: users[req.cookies.user_id] };
+  if (!urlDatabase[req.params.id]) {
+    return res.status(404).send(`Provided Tiny URL [${req.params.id}] not found in database`);
+  }
+  if (urlDatabase[req.params.id].userID !== req.cookies.user_id) {
+    return res.status(403).send('Forbidden');
+  }
+
+  const templateVars =
+  {
+    id: req.params.id,
+    longURL: urlDatabase[req.params.id].longURL,
+    user: users[req.cookies.user_id]
+  };
+
   res.render("urls_show", templateVars)
 })
 
@@ -241,7 +251,7 @@ app.get("/u/:id", (req, res) => {
   if (!urlDatabase[req.params.id]) {
     res.statusCode = 404;
     res.statusMessage = 'Not Found';
-    return res.send(`Provided Tiny URL [${req.params.id}] not found in database`);
+    return res.status(404).send(`Provided Tiny URL [${req.params.id}] not found in database`);
   }
   const longURL = urlDatabase[req.params.id].longURL;
   res.redirect(longURL);
