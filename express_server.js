@@ -1,11 +1,12 @@
 const express = require('express');
 const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
+const bcrypt = require('bcryptjs');
 const app = express();
 const PORT = 8080;
 
 app.set('view engine', 'ejs');
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieSession({
   name: 'session',
   keys: ['LHL', 'Tiny', 'App'],
@@ -40,7 +41,18 @@ const users = {
   }
 };
 
-const isUserEmailInDatabase = function(userEmail) {
+//helper functions
+const urlsForUser = function (id) {
+  const userURL = {};
+  for (const key in urlDatabase) {
+    if (urlDatabase[key].userID === id) {
+      userURL[key] = urlDatabase[key];
+    }
+  }
+  return userURL;
+};
+
+const isUserEmailInDatabase = function (userEmail) {
   for (const key in users) {
     if (users[key].email === userEmail) {
       return users[key];
@@ -48,7 +60,8 @@ const isUserEmailInDatabase = function(userEmail) {
   }
   return false;
 };
-const generateRandomString = function() {
+
+const generateRandomString = function () {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   for (let i = 0; i < 6; i++) {
@@ -63,49 +76,52 @@ app.get('/', (req, res) => {
     res.redirect('/urls');
     return;
   }
+  res.redirect('/login');
 });
 
 // return the urls available in the database
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
+
 // user logout page
 app.post('/logout', (req, res) => {
-  eq.session = null;
+  req.session = null;
   res.redirect('/urls');
 });
+
 // user login page
 app.get("/login", (req, res) => {
-  // !!! subject to change
+  const user = users[req.session.user_id];
   if (req.session.user_id) {
     res.redirect('/urls');
     return;
   }
-  const templateVars = { urls: urlDatabase, user: users[req.session.user_id] };
+  const templateVars = { user };
   res.render("login", templateVars);
 });
 
-// user login routing
+// user login success
 app.post('/login', (req, res) => {
   if (!req.body.email || !req.body.password) {
     return res.status(400).send(`Cannot leave email and password empty`);
   }
 
-  let userData = isUserEmailInDatabase(req.body.email);
+  const userData = isUserEmailInDatabase(req.body.email);
   if (userData === false) {
-    return res.status(403).send(`User does not exist in database`);
+    return res.status(400).send(`User does not exist in database. Please <a href="/register">Register</a>`);
   }
   // check if the password matches with the one stored in the datbase
-  if (!bcrypt.compareSync(req.body.password,userData.password)) {
-    return res.status(403).send(`Incorrect password`);
-  }
-  //set the appropriate cookie
-  res.sesssion.user_id = userData.id;
-  res.redirect('/urls');
+  bcrypt.compare(req.body.password, userData.password, (err, result) => {
+    if (!result) {
+      return res.status(400).send(`The username or password is incorrect. Please <a href="/login">Login</a>`);
+    }
+    req.session.user_id = userData.id;
+    res.redirect('/urls');
+  });;
 });
 // user registration page
 app.get('/register', (req,res) => {
-  // !!! subject to change
   if (req.session.user_id) {
     res.redirect('/urls');
     return;
@@ -117,13 +133,13 @@ app.get('/register', (req,res) => {
 // user registration routing
 app.post('/register', (req,res)=>{
   // if bad input 
-  if (req.body.email === '' || req.body.password === '') {
-    return res.status(400).send(`Cannot leave email and password empty`);
+  if (!req.body.email || !req.body.password) {
+    return res.status(400).send(`Cannot leave email and password empty. Please <a href="/register">Register</a>`);
   }
   
   // user already exists in datbase
   if (isUserEmailInDatabase(req.body.email) !== false) {
-    return res.status(400).send(`User already exists`);
+    return res.status(400).send(`User already exists. Please <a href="/login">Login</a>`);
   }
   
   // setup new user
@@ -155,8 +171,9 @@ app.get("/urls", (req, res) => {
     return;
   }
 
-  let usersURL = urlsForUser(req.session.user_id);
-  const templateVars = { urls: usersURL, user: users[req.session.user_id] };
+  const user = users[req.session.user_id];
+  const urls = urlsForUser(req.session.user_id);
+  const templateVars = { urls, user };
   res.render("urls_index", templateVars);
 });
 
@@ -181,12 +198,13 @@ app.post('/urls', (req, res) => {
 // delete the url
 app.post('/urls/:id/delete', (req, res)=> {
   if (!req.session.user_id) {
-    return res.status(403).send('Unable to delete TinyURL');
+    return res.status(400).send('Unable to delete TinyURL');
   } 
 
   if (urlDatabase[req.params.id].userID !== req.session.user_id) {
     return res.status(403).send('Unable to delete modify another users Tiny URLs');
   }
+
   delete urlDatabase[req.params.id];
   res.redirect('/urls');
 });
